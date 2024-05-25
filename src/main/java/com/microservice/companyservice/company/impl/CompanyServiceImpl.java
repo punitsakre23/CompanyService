@@ -3,6 +3,8 @@ package com.microservice.companyservice.company.impl;
 import com.microservice.companyservice.company.Company;
 import com.microservice.companyservice.company.CompanyRepository;
 import com.microservice.companyservice.company.CompanyService;
+import com.microservice.companyservice.company.client.ReviewClient;
+import com.microservice.companyservice.company.dto.ReviewMessage;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -12,9 +14,11 @@ import java.util.Optional;
 public class CompanyServiceImpl implements CompanyService {
 
     private final CompanyRepository companyRepository;
+    private final ReviewClient reviewClient;
 
-    public CompanyServiceImpl(CompanyRepository companyRepository) {
+    public CompanyServiceImpl(CompanyRepository companyRepository, ReviewClient reviewClient) {
         this.companyRepository = companyRepository;
+        this.reviewClient = reviewClient;
     }
 
     /**
@@ -70,6 +74,18 @@ public class CompanyServiceImpl implements CompanyService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * @param reviewMessage reviewMessage
+     */
+    @Override
+    public void updateCompanyRating(ReviewMessage reviewMessage) {
+        Company company = companyRepository.findById(reviewMessage.getCompanyId())
+                .orElseThrow(() -> new RuntimeException("Company Not Found: " + reviewMessage.getCompanyId()));
+        Double averageRating = reviewClient.getAverageRatingForACompany(reviewMessage.getCompanyId());
+        company.setRating(averageRating);
+        companyRepository.save(company);
     }
 
     private void updateCompanyDetails(Company companyDetails, Company company) {
